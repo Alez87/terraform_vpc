@@ -7,3 +7,5 @@ Provision with Terraform an AWS infrastructure with:
 - etc. 
 
 to create the base to create an highly avalable web application.
+
+The remote server is configured with Puppet.
