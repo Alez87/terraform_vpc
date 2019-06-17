@@ -21,7 +21,7 @@ variable "enable_dns_support" {
 }
 
 variable "whitelist_ip" {
-  default     = ["to insert ip1", "to insert ip2"] # TODO
+  default     = ["x.x.x.x/32"] #my ip
   type        = "list"
   description = "List of IPs that are allowed to connect"
 }

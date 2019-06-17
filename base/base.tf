@@ -43,15 +43,14 @@ module "vpc" {
 }
 
 resource "aws_instance" "base" {
-  user_data = "${file("file/bootstrap.sh")}"
-  ami       = "${lookup(var.ami, var.region)}"
+  ami = "${lookup(var.ami, var.region)}"
+  # otherwise: ami = var.ami[“us-east-1”]
 
-  # otherwise: var.ami[“us-east-1”]
   instance_type               = "${var.instance_type}"
   key_name                    = "${var.key_name}"
   subnet_id                   = "${module.vpc.public_subnet_id}"
   associate_public_ip_address = true
-  user_data                   = "${file("files/bootstrap.sh")}"
+  #user_data                  = "${file("files/bootstrap.sh")}" #without config. manag.
 
   #vpc_security_group_ids = "${var.security_group_list}"
   vpc_security_group_ids = ["${module.vpc.security_group_instances}"]
@@ -61,13 +60,35 @@ resource "aws_instance" "base" {
   }
 
   count = "${length(var.instance_ips)}" #count = 2
+
+  # configuration management:
+  connection {
+    user        = "ubuntu"
+    private_key = "${file(var.key_path)}"
+  }
+  provisioner "file" {
+    content     = "${element(data.template_file.index.*.rendered, count.index)}"
+    destination = "/tmp/index.html"
+  }
+  provisioner "remote-exec" {
+    script = "files/bootstrap_puppet.sh"
+  }
+  provisioner "remote-exec" { 
+    inline = ["sudo mv /tmp/index.html /var/www/html/index.html"]
+  }
+}
+
+data "template_file" "index" {
+  count    = "${length(var.instance_ips)}"
+  template = "${file("files/index.html.tpl")}"
+  vars = {
+    hostname = "web-${format("%03d", count.index+1)}"
+  }
 }
 
 resource "aws_elb" "base" {
   name    = "web-elb"
   subnets = ["${module.vpc.public_subnet_id}"]
-
-  #  security_groups = "${var.security_group_list}"
   security_groups = ["${module.vpc.security_group_lb}"]
 
   listener = {
@@ -84,9 +105,7 @@ resource "aws_elb" "base" {
 resource "aws_eip" "base" {
   count    = "${length(var.instance_ips)}"
   instance = "${element(aws_instance.base.*.id, count.index)}"
-
   #instance = "${aws_instance.base.*.id}"
   vpc = true
 }
 */
-

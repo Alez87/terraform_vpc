@@ -28,6 +28,12 @@ variable "key_name" {
   description = "The AWS key pair to use for resources"
 }
 
+variable "key_path" {
+  default     = "ssh_key/myKeyPair.pem"
+  type        = "string"
+  description = "The AWS key pair path to use for resources"
+}
+
 variable "region_list" {
   default     = ["us-east-1a", "us-east-1b"]
   type        = "list"
